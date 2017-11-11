@@ -51,8 +51,7 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
 
   const lint = config => lazypipe()
     .pipe(eslint, config)
-    .pipe(eslint.format)
-    .pipe(eslint.failAfterError);
+    .pipe(eslint.format);
 
   /**
     Creates the task that
@@ -67,7 +66,6 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
   function createProcessJSTask(taskName, from, to) {
     gulp.task(taskName, () => gulp.src(`${from}/**/*.js `)
       .pipe(lint(eslintConfig)())
-      .pipe(eslint.failAfterError())
       .pipe(flowRemoveTypes(), {
         pretty: true
       })
