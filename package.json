@@ -1,0 +1,37 @@
+{
+  "name": "ethly-deploy",
+  "version": "0.0.1",
+  "description": "Common scripts for build and deploy of eth.ly",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethly/deploy.git"
+  },
+  "keywords": [
+    "deploy",
+    "flow",
+    "gulp"
+  ],
+  "author": "eth.ly",
+  "homepage": "https://github.com/ethly",
+  "license": "GPL-3.0",
+  "main": "gulpfile.js",
+  "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^8.0.2",
+    "del": "^3.0.0",
+    "eslint": "^4.11.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-config-standard-flow": "^1.0.1",
+    "flow-bin": "^0.57.3",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^7.0.0",
+    "gulp-debug": "^3.1.0",
+    "gulp-eslint": "^4.0.0",
+    "gulp-flow-remove-types": "^1.0.0",
+    "gulp-jasmine": "^2.4.2",
+    "gulp-run": "^1.7.1",
+    "jasmine": "^2.8.0",
+    "lazypipe": "^1.0.1",
+    "run-sequence": "^2.2.0"
+  }
+}
