@@ -16,7 +16,6 @@ const setupBuild = require('ethly-deploy');
 setupBuild(
   gulp,
   'path/to/sources',
-  'path/to/tests',
   'path/to/build',
   'path/to/build_test'
 );

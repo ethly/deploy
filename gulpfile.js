@@ -5,11 +5,10 @@
 
   @param gulp         The gulp object, related to the project
   @param srcDir       The path of the directory with sources
-  @param testDir      The path of the directory with tests
   @param buildDir     The patj of the output directory
   @param buildTestDir The path of the output directory for tests
 */
-function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
+function createBuildTasks(gulp, srcDir, buildDir, buildTestDir) {
 
   const babel = require('gulp-babel');
   const del = require('del');
@@ -19,6 +18,7 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
   const flowRemoveTypes = require('gulp-flow-remove-types');
   const jasmine = require('gulp-jasmine');
   const lazypipe = require('lazypipe');
+  const rename = require('gulp-rename');
   const sequence = require('run-sequence').use(gulp);
 
   const eslintConfig = {
@@ -64,12 +64,19 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
     @param to       The path of destination directory
   */
   function createProcessJSTask(taskName, from, to) {
-    gulp.task(taskName, () => gulp.src(`${from}/**/*.js `)
+    gulp.task(taskName, () => gulp.src(from)
       .pipe(lint(eslintConfig)())
       .pipe(flowRemoveTypes(), {
         pretty: true
       })
-      .pipe(babel())
+      .pipe(babel({
+        presets: ["env"],
+        plugins: [
+          ["module-resolver", {
+            root: [`./${srcDir}`],
+          }],
+        ],
+      }))
       .pipe(gulp.dest(to))
     );
   }
@@ -79,13 +86,35 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
   createFlowTask('typecheck', []);
 
   createFlowTask(
-    'build-declarations', ['gen-flow-files', '--out-dir', buildDir, srcDir]
+    'build-declarations', [
+      'gen-flow-files',
+      '--out-dir', buildDir,
+      '--ignore', '.*/__tests__/.*',
+      srcDir]
+  );
+
+  gulp.task('resolve-declarations', () => gulp.src(`${buildDir}/**/*.js.flow`)
+    .pipe(babel({
+      plugins: [
+        "syntax-flow",
+        ["module-resolver", {
+          root: [`./${buildDir}`],
+        }],
+      ]
+    }))
+    .pipe(rename({
+      extname: '',
+    }))
+    .pipe(rename({
+      extname: '.js.flow',
+    }))
+    .pipe(gulp.dest(buildDir))
   );
 
   gulp.task('lint', () => {
     const fixConfig = Object.assign({}, eslintConfig, { fix: true });
     return gulp.src([
-        `@(${srcDir}|${testDir})/**/*.js`
+        `${srcDir}/**/*.js`
       ])
       .pipe(lint(fixConfig)())
       .pipe(gulp.dest('.'))
@@ -93,14 +122,18 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
 
   /* JS processing */
 
-  createProcessJSTask('build-src', srcDir, buildDir);
+  // Exclude tests
+  createProcessJSTask(
+    'build-src',
+    [`${srcDir}/**/*.js`, `!${srcDir}/**/__tests__/**/*.js`],
+    buildDir
+  );
 
-  createProcessJSTask('build-test', testDir, `${buildTestDir}/${testDir}`);
-  createProcessJSTask('build-src-test', srcDir, `${buildTestDir}/${srcDir}`);
+  createProcessJSTask('build-test', `${srcDir}/**/*.js`, buildTestDir);
 
   /* Test start */
 
-  gulp.task('run-test', () => gulp.src(`${buildTestDir}/${testDir}/**/*.js`)
+  gulp.task('run-test', () => gulp.src(`${buildTestDir}/**/__tests__/**/*.js`)
     .pipe(jasmine())
   );
 
@@ -116,6 +149,7 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
     'typecheck',
     'build-src',
     'build-declarations',
+    'resolve-declarations',
     cb
   ));
 
@@ -123,7 +157,6 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
     'clean-test',
     'typecheck',
     'build-test',
-    'build-src-test',
     'run-test',
     cb
   ));
