@@ -5,20 +5,19 @@
 
   @param gulp         The gulp object, related to the project
   @param srcDir       The path of the directory with sources
-  @param testDir      The path of the directory with tests
   @param buildDir     The patj of the output directory
   @param buildTestDir The path of the output directory for tests
 */
-function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
+function createBuildTasks(gulp, srcDir, buildDir, buildTestDir) {
 
   const babel = require('gulp-babel');
   const del = require('del');
   const execFile = require('child_process').execFile;
   const eslint = require('gulp-eslint')
   const flow = require('flow-bin');
-  const flowRemoveTypes = require('gulp-flow-remove-types');
   const jasmine = require('gulp-jasmine');
   const lazypipe = require('lazypipe');
+  const rename = require('gulp-rename');
   const sequence = require('run-sequence').use(gulp);
 
   const eslintConfig = {
@@ -33,21 +32,6 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
     },
     envs: ["jasmine", "browser", "node"],
   };
-
-  /**
-    Creates tasks that starts flow with specified params
-
-    @param taskName   The name of the task to create
-    @param flowParams Params for flow
-  */
-  function createFlowTask(taskName, flowParams) {
-    gulp.task(taskName, cb => {
-      execFile(flow, flowParams, (err, stdout) => {
-        console.log(stdout);
-        cb(err);
-      });
-    });
-  }
 
   const lint = config => lazypipe()
     .pipe(eslint, config)
@@ -64,43 +48,61 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
     @param to       The path of destination directory
   */
   function createProcessJSTask(taskName, from, to) {
-    gulp.task(taskName, () => gulp.src(`${from}/**/*.js `)
+    gulp.task(taskName, () => gulp.src(from)
       .pipe(lint(eslintConfig)())
-      .pipe(flowRemoveTypes(), {
-        pretty: true
-      })
-      .pipe(babel())
+      .pipe(babel({
+        presets: ["env"],
+        plugins: [
+          "transform-flow-strip-types",
+          ["module-resolver", {
+            root: [`./${srcDir}`],
+          }],
+        ],
+      }))
       .pipe(gulp.dest(to))
     );
   }
 
   /* Tasks for Type Checking */
 
-  createFlowTask('typecheck', []);
-
-  createFlowTask(
-    'build-declarations', ['gen-flow-files', '--out-dir', buildDir, srcDir]
-  );
+  gulp.task('typecheck', cb => {
+    execFile(flow, [], (err, stdout) => {
+      console.log(stdout);
+      cb(err);
+    });
+  });
 
   gulp.task('lint', () => {
     const fixConfig = Object.assign({}, eslintConfig, { fix: true });
     return gulp.src([
-        `@(${srcDir}|${testDir})/**/*.js`
+        `${srcDir}/**/*.js`
       ])
       .pipe(lint(fixConfig)())
-      .pipe(gulp.dest('.'))
+      .pipe(gulp.dest(srcDir))
   });
 
   /* JS processing */
 
-  createProcessJSTask('build-src', srcDir, buildDir);
+  // Exclude tests
+  const jsFiles = [`${srcDir}/**/*.js`, `!${srcDir}/**/__tests__/**/*.js`];
+  createProcessJSTask(
+    'build-src',
+    jsFiles,
+    buildDir
+  );
 
-  createProcessJSTask('build-test', testDir, `${buildTestDir}/${testDir}`);
-  createProcessJSTask('build-src-test', srcDir, `${buildTestDir}/${srcDir}`);
+  createProcessJSTask('build-test', `${srcDir}/**/*.js`, buildTestDir);
+
+  gulp.task('copy-flow', () => gulp.src(jsFiles)
+    .pipe(rename({
+      extname: '.js.flow',
+    }))
+    .pipe(gulp.dest(buildDir))
+  );
 
   /* Test start */
 
-  gulp.task('run-test', () => gulp.src(`${buildTestDir}/${testDir}/**/*.js`)
+  gulp.task('run-test', () => gulp.src(`${buildTestDir}/**/__tests__/**/*.js`)
     .pipe(jasmine())
   );
 
@@ -115,7 +117,7 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
     'clean',
     'typecheck',
     'build-src',
-    'build-declarations',
+    'copy-flow',
     cb
   ));
 
@@ -123,7 +125,6 @@ function createBuildTasks(gulp, srcDir, testDir, buildDir, buildTestDir) {
     'clean-test',
     'typecheck',
     'build-test',
-    'build-src-test',
     'run-test',
     cb
   ));
