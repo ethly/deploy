@@ -1,6 +1,6 @@
 {
   "name": "ethly-deploy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Common scripts for build and deploy of eth.ly",
   "repository": {
     "type": "git",
@@ -15,16 +15,17 @@
   "homepage": "https://github.com/ethly",
   "license": "GPL-3.0",
   "main": "gulpfile.js",
+  "eslintConfig": {
+    "extends": "ethly"
+  },
   "dependencies": {
     "babel-core": "^6.26.0",
-    "babel-eslint": "^8.0.2",
     "babel-plugin-module-resolver": "^3.0.0",
+    "babel-plugin-syntax-flow": "^6.18.0",
     "babel-plugin-transform-flow-strip-types": "^6.22.0",
     "babel-preset-env": "^1.0.0",
     "del": "^3.0.0",
     "eslint": "^4.11.0",
-    "eslint-config-standard": "^10.2.1",
-    "eslint-config-standard-flow": "^1.0.1",
     "flow-bin": "^0.57.3",
     "gulp": "^3.9.1",
     "gulp-babel": "^7.0.0",
@@ -36,5 +37,8 @@
     "jasmine": "^2.8.0",
     "lazypipe": "^1.0.1",
     "run-sequence": "^2.2.0"
+  },
+  "devDependencies": {
+    "eslint-config-ethly": "ethly/eslint-config"
   }
 }
