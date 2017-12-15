@@ -12,16 +12,16 @@ function createBuildTasks(gulp, srcDir, buildDir, buildTestDir) {
   const babel = require('gulp-babel')
   const del = require('del')
   const execFile = require('child_process').execFile
-  const eslint = require('gulp-eslint')
+  // const eslint = require('gulp-eslint')
   const flow = require('flow-bin')
   const jasmine = require('gulp-jasmine')
   const lazypipe = require('lazypipe')
   const rename = require('gulp-rename')
   const sequence = require('run-sequence').use(gulp)
 
-  const lint = config => lazypipe()
-    .pipe(eslint, config)
-    .pipe(eslint.format)
+  // const lint = config => lazypipe()
+  //   .pipe(eslint, config)
+  //   .pipe(eslint.format)
 
   /**
     Creates the task that
@@ -35,7 +35,6 @@ function createBuildTasks(gulp, srcDir, buildDir, buildTestDir) {
   */
   function createProcessJSTask(taskName, from, to) {
     gulp.task(taskName, () => gulp.src(from)
-      .pipe(lint({})())
       .pipe(babel({
         presets: ['env'],
         plugins: [
@@ -60,15 +59,15 @@ function createBuildTasks(gulp, srcDir, buildDir, buildTestDir) {
     })
   })
 
-  gulp.task('lint', () => {
-    return gulp.src([
-      `${srcDir}/**/*.js`,
-    ])
-      .pipe(lint({
-        fix: true,
-      })())
-      .pipe(gulp.dest(srcDir))
-  })
+  // gulp.task('lint', () => {
+  //   return gulp.src([
+  //     `${srcDir}/**/*.js`,
+  //   ])
+  //     .pipe(lint({
+  //       fix: true,
+  //     })())
+  //     .pipe(gulp.dest(srcDir))
+  // })
 
   /* JS processing */
 
